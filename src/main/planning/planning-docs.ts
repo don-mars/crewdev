@@ -9,6 +9,7 @@ async function ensureDir(dirPath: string): Promise<void> {
   try {
     await access(dirPath);
   } catch {
+    logger.debug('Directory not found, creating', { dirPath });
     await mkdir(dirPath, { recursive: true });
   }
 }
@@ -59,7 +60,7 @@ export async function createDoc(
       error: { code: 'DUPLICATE_NAME', message: `Document already exists: ${name}` },
     };
   } catch {
-    // Expected — file doesn't exist yet
+    logger.debug('File does not exist yet, proceeding with creation', { name });
   }
 
   await writeFile(filePath, `# ${name}\n`);

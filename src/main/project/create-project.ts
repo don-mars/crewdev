@@ -37,7 +37,7 @@ export async function createProject(
         error: { code: 'DUPLICATE_PROJECT', message: `Project already exists at ${dirPath}` },
       };
     } catch {
-      // Expected — directory doesn't exist yet
+      logger.debug('No existing project found, proceeding with creation', { dirPath });
     }
 
     // Create directory structure
