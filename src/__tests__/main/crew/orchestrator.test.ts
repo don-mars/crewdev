@@ -16,8 +16,18 @@ describe('Orchestrator', () => {
 
   const defaultMemory: SharedMemory = {
     projectId: 'proj-1',
+    projectState: {
+      phase: 'foundation',
+      techStack: [],
+      completedFeatures: [],
+      activeConventions: [],
+    },
     decisionLog: [],
-    knowledgeProfile: {},
+    errorHistory: [],
+    userPreferences: {
+      communicationStyle: 'concise',
+      knowledgeLevel: 'intermediate',
+    },
   };
 
   beforeEach(() => {

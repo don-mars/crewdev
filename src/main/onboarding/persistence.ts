@@ -1,9 +1,11 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import path from 'node:path';
 import type { OnboardingProgress } from '../../shared/types/onboarding';
 import { createDefaultProgress } from '../../shared/types/onboarding';
 import { logger } from '../../shared/utils/logger';
 
 export async function saveProgress(filePath: string, progress: OnboardingProgress): Promise<void> {
+  await mkdir(path.dirname(filePath), { recursive: true });
   await writeFile(filePath, JSON.stringify(progress, null, 2), 'utf-8');
 }
 

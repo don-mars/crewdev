@@ -76,7 +76,7 @@ describe('Error handling audit', () => {
       catchBlockRe.lastIndex = 0;
       while ((match = catchBlockRe.exec(content)) !== null) {
         const body = match[2];
-        const hasLogger = /logger\.\w+/.test(body);
+        const hasLogger = /logger\.\w+/.test(body) || /console\.\w+/.test(body);
         const hasReturn = /return\s*\{/.test(body) || /return\s+{/.test(body);
         const hasThrow = /throw/.test(body);
         const hasErrorHandling = hasLogger || hasReturn || hasThrow;

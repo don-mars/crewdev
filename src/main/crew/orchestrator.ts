@@ -70,9 +70,9 @@ export class Orchestrator {
 
     const decisionLog: DecisionEntry[] = [
       {
-        timestamp: new Date().toISOString(),
+        date: new Date().toISOString(),
         decision: `Executed plan: ${plan.summary}`,
-        reason: `Decomposed into ${plan.taskGroups.length} task group(s)`,
+        rationale: `Decomposed into ${plan.taskGroups.length} task group(s)`,
       },
     ];
 

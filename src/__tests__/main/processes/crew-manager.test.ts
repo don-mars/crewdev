@@ -70,6 +70,17 @@ describe('CrewManager', () => {
       expect(result.id).toBe('builder-1');
     });
 
+    it('should pass cwd to spawn options when provided', async () => {
+      const manager = new CrewManager(mockSpawn);
+      await manager.spawn({ ...DEFAULT_CONFIG, cwd: '/projects/my-app' });
+
+      expect(mockSpawn).toHaveBeenCalledWith(
+        'claude',
+        ['--print', '--output-format', 'stream-json'],
+        expect.objectContaining({ cwd: '/projects/my-app' }),
+      );
+    });
+
     it('should throw SPAWN_FAILED when CLI binary not found', async () => {
       const errProc = createMockChildProcess();
       // Override pid to 0 to simulate failed spawn

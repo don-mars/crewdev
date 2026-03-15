@@ -67,8 +67,11 @@ describe('Project creation', () => {
     const memoryJson = JSON.parse(mockFs['/test/dir/.crewdev/memory.json']);
     expect(memoryJson).toHaveProperty('projectId');
     expect(memoryJson).toHaveProperty('decisionLog');
-    expect(memoryJson).toHaveProperty('knowledgeProfile');
+    expect(memoryJson).toHaveProperty('projectState');
+    expect(memoryJson).toHaveProperty('errorHistory');
+    expect(memoryJson).toHaveProperty('userPreferences');
     expect(Array.isArray(memoryJson.decisionLog)).toBe(true);
+    expect(Array.isArray(memoryJson.errorHistory)).toBe(true);
   });
 
   it('should create features/ directory', async () => {

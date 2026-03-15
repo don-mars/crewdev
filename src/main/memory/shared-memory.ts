@@ -39,9 +39,13 @@ export async function writeMemory(
   const merged: SharedMemory = {
     ...existing.data,
     ...patch,
-    knowledgeProfile: {
-      ...existing.data.knowledgeProfile,
-      ...(patch.knowledgeProfile ?? {}),
+    projectState: {
+      ...existing.data.projectState,
+      ...(patch.projectState ?? {}),
+    },
+    userPreferences: {
+      ...existing.data.userPreferences,
+      ...(patch.userPreferences ?? {}),
     },
   };
 

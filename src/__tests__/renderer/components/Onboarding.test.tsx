@@ -1,25 +1,34 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { Onboarding } from '../../../renderer/components/Onboarding';
 import type { OnboardingProgress } from '../../../shared/types/onboarding';
+
+const mockProjectCreate = vi.fn().mockResolvedValue({ success: true, data: { id: 'p1', name: 'my-app', dirPath: '/projects/my-app', createdAt: '2026-03-13' } });
+const mockProjectSelect = vi.fn().mockResolvedValue({ success: true, data: { id: 'p1', name: 'my-app', dirPath: '/projects/my-app', createdAt: '2026-03-13' } });
+
+vi.stubGlobal('window', {
+  ...globalThis.window,
+  crewdev: {
+    linear: { sync: vi.fn().mockResolvedValue({ success: true }) },
+    project: { create: mockProjectCreate, select: mockProjectSelect },
+  },
+});
 
 describe('Onboarding flow', () => {
   let mockOnStepComplete: (step: string) => void;
   let mockOnSkip: (step: string) => void;
-  let mockValidateApiKey: (key: string) => Promise<{ valid: boolean; error?: string }>;
   let mockOnComplete: () => void;
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockOnStepComplete = vi.fn() as unknown as typeof mockOnStepComplete;
     mockOnSkip = vi.fn() as unknown as typeof mockOnSkip;
-    mockValidateApiKey = vi.fn().mockResolvedValue({ valid: true }) as unknown as typeof mockValidateApiKey;
     mockOnComplete = vi.fn() as unknown as typeof mockOnComplete;
   });
 
   function renderOnboarding(step: string = 'welcome') {
     const progress: OnboardingProgress = {
-      currentStep: step as any,
+      currentStep: step as OnboardingProgress['currentStep'],
       completedSteps: [],
       completed: false,
     };
@@ -28,7 +37,6 @@ describe('Onboarding flow', () => {
         progress={progress}
         onStepComplete={mockOnStepComplete}
         onSkip={mockOnSkip}
-        validateApiKey={mockValidateApiKey}
         onComplete={mockOnComplete}
       />,
     );
@@ -36,12 +44,14 @@ describe('Onboarding flow', () => {
 
   it('should render Welcome screen as step 1', () => {
     renderOnboarding('welcome');
-    expect(screen.getByText(/welcome/i)).toBeTruthy();
+    expect(screen.getByText(/welcome to crewdev/i)).toBeTruthy();
+    expect(screen.getByRole('button', { name: /get started/i })).toBeTruthy();
   });
 
   it('should render GitHub connection as step 2', () => {
     renderOnboarding('github');
-    expect(screen.getByRole('heading', { name: /github connection/i })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: /connect github/i })).toBeTruthy();
+    expect(screen.getByPlaceholderText(/ghp_/i)).toBeTruthy();
   });
 
   it('should allow skipping GitHub connection', () => {
@@ -53,7 +63,8 @@ describe('Onboarding flow', () => {
 
   it('should render Linear connection as step 3', () => {
     renderOnboarding('linear');
-    expect(screen.getByRole('heading', { name: /linear connection/i })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: /connect linear/i })).toBeTruthy();
+    expect(screen.getByPlaceholderText(/lin_api_/i)).toBeTruthy();
   });
 
   it('should allow skipping Linear connection', () => {
@@ -63,53 +74,47 @@ describe('Onboarding flow', () => {
     expect(mockOnSkip).toHaveBeenCalledWith('linear');
   });
 
-  it('should render API key input as step 4', () => {
-    renderOnboarding('api-key');
-    expect(screen.getByRole('heading', { name: /api key/i })).toBeTruthy();
-    expect(screen.getByPlaceholderText(/sk-ant/i)).toBeTruthy();
-  });
-
-  it('should reject invalid API key with clear message', async () => {
-    (mockValidateApiKey as ReturnType<typeof vi.fn>).mockResolvedValue({
-      valid: false,
-      error: 'Invalid API key',
-    });
-
-    renderOnboarding('api-key');
-
-    const input = screen.getByPlaceholderText(/sk-ant/i);
-    fireEvent.change(input, { target: { value: 'bad-key' } });
-    fireEvent.click(screen.getByRole('button', { name: /validate/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText(/invalid/i)).toBeTruthy();
-    });
-  });
-
-  it('should accept valid API key', async () => {
-    renderOnboarding('api-key');
-
-    const input = screen.getByPlaceholderText(/sk-ant/i);
-    fireEvent.change(input, { target: { value: 'sk-ant-valid-key' } });
-    fireEvent.click(screen.getByRole('button', { name: /validate/i }));
-
-    await waitFor(() => {
-      expect(mockOnStepComplete).toHaveBeenCalledWith('api-key');
-    });
-  });
-
-  it('should render Knowledge Profile as step 5', () => {
+  it('should render Knowledge Profile as step 4', () => {
     renderOnboarding('knowledge');
-    expect(screen.getByText(/knowledge/i)).toBeTruthy();
+    expect(screen.getByText(/your experience level/i)).toBeTruthy();
+    expect(screen.getByText('Beginner')).toBeTruthy();
+    expect(screen.getByText('Intermediate')).toBeTruthy();
+    expect(screen.getByText('Senior')).toBeTruthy();
   });
 
-  it('should render Meet Your Crew as step 6', () => {
+  it('should render Meet Your Crew as step 5', () => {
     renderOnboarding('meet-crew');
-    expect(screen.getByText(/meet your crew/i)).toBeTruthy();
+    expect(screen.getByRole('heading', { name: /meet your crew/i })).toBeTruthy();
+    expect(screen.getByText(/orchestrator/i)).toBeTruthy();
+    expect(screen.getByText(/builder/i)).toBeTruthy();
   });
 
-  it('should render project setup as step 7', () => {
+  it('should render project setup as step 6', () => {
     renderOnboarding('project-setup');
-    expect(screen.getByRole('heading', { name: /project/i })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: /open a project/i })).toBeTruthy();
+    expect(screen.getByPlaceholderText(/projects/i)).toBeTruthy();
+  });
+
+  it('should call project.create when Open Project is clicked with a path', async () => {
+    renderOnboarding('project-setup');
+    const input = screen.getByPlaceholderText(/projects/i);
+    fireEvent.change(input, { target: { value: '/projects/my-app' } });
+
+    const button = screen.getByRole('button', { name: /open project/i });
+    fireEvent.click(button);
+
+    await vi.waitFor(() => {
+      expect(mockProjectCreate).toHaveBeenCalledWith('my-app', '/projects/my-app');
+    });
+  });
+
+  it('should call onComplete when skipping project setup', async () => {
+    renderOnboarding('project-setup');
+    const button = screen.getByRole('button', { name: /skip/i });
+    fireEvent.click(button);
+
+    await vi.waitFor(() => {
+      expect(mockOnComplete).toHaveBeenCalled();
+    });
   });
 });

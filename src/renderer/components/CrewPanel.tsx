@@ -40,6 +40,12 @@ export function CrewPanel({ crew, activeIds, onActivate, onDeactivate }: CrewPan
   return (
     <div className="space-y-2 p-3">
       <h3 className="text-sm font-semibold text-gray-300">Crew</h3>
+      {crew.length === 0 && (
+        <p className="text-xs text-gray-500 py-2">No crew members configured.</p>
+      )}
+      {crew.length > 0 && activeIds.length === 0 && (
+        <p className="text-xs text-gray-500 py-1">Click a crew member to activate them.</p>
+      )}
       {crew.map((member) => {
         const isActive = activeIds.includes(member.id);
 

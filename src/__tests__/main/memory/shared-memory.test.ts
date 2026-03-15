@@ -28,8 +28,18 @@ const MEMORY_PATH = '/project/.crewdev/memory.json';
 
 const VALID_MEMORY: SharedMemory = {
   projectId: 'proj-1',
-  decisionLog: [{ timestamp: '2026-03-13T00:00:00Z', decision: 'Use React', reason: 'Team knows it' }],
-  knowledgeProfile: { typescript: 0.9 },
+  projectState: {
+    phase: 'foundation',
+    techStack: ['react', 'typescript'],
+    completedFeatures: [],
+    activeConventions: ['strict-ts'],
+  },
+  decisionLog: [{ date: '2026-03-13', decision: 'Use React', rationale: 'Team knows it' }],
+  errorHistory: [],
+  userPreferences: {
+    communicationStyle: 'concise',
+    knowledgeLevel: 'intermediate',
+  },
 };
 
 describe('Shared Memory', () => {
@@ -48,7 +58,8 @@ describe('Shared Memory', () => {
       if (result.success) {
         expect(result.data.projectId).toBe('proj-1');
         expect(result.data.decisionLog).toHaveLength(1);
-        expect(result.data.knowledgeProfile.typescript).toBe(0.9);
+        expect(result.data.projectState.techStack).toContain('react');
+        expect(result.data.userPreferences.communicationStyle).toBe('concise');
       }
     });
 
@@ -78,14 +89,14 @@ describe('Shared Memory', () => {
       mockFs[MEMORY_PATH] = JSON.stringify(VALID_MEMORY);
 
       const result = await writeMemory(MEMORY_PATH, {
-        knowledgeProfile: { react: 0.8 },
+        userPreferences: { communicationStyle: 'verbose', knowledgeLevel: 'beginner' },
       });
 
       expect(result.success).toBe(true);
       const written = JSON.parse(mockFs[MEMORY_PATH]) as SharedMemory;
       expect(written.projectId).toBe('proj-1');
       expect(written.decisionLog).toHaveLength(1);
-      expect(written.knowledgeProfile.react).toBe(0.8);
+      expect(written.userPreferences.communicationStyle).toBe('verbose');
     });
 
     it('should handle empty patch as no-op', async () => {
@@ -104,7 +115,7 @@ describe('Shared Memory', () => {
       await writeMemory(MEMORY_PATH, {
         decisionLog: [
           ...VALID_MEMORY.decisionLog,
-          { timestamp: '2026-03-13T01:00:00Z', decision: 'Add Zustand', reason: 'Simple state' },
+          { date: '2026-03-13', decision: 'Add Zustand', rationale: 'Simple state' },
         ],
       });
 
@@ -113,25 +124,40 @@ describe('Shared Memory', () => {
       expect(written.decisionLog[1].decision).toBe('Add Zustand');
     });
 
+    it('should deep merge projectState', async () => {
+      mockFs[MEMORY_PATH] = JSON.stringify(VALID_MEMORY);
+
+      await writeMemory(MEMORY_PATH, {
+        projectState: {
+          phase: 'scaling',
+          techStack: ['react', 'typescript', 'zustand'],
+          completedFeatures: ['auth'],
+          activeConventions: ['strict-ts'],
+        },
+      });
+
+      const written = JSON.parse(mockFs[MEMORY_PATH]) as SharedMemory;
+      expect(written.projectState.phase).toBe('scaling');
+      expect(written.projectState.techStack).toContain('zustand');
+    });
+
     it('should not corrupt file on concurrent writes', async () => {
       mockFs[MEMORY_PATH] = JSON.stringify(VALID_MEMORY);
 
-      // Simulate two concurrent writes
       const [r1, r2] = await Promise.all([
-        writeMemory(MEMORY_PATH, { knowledgeProfile: { go: 0.5 } }),
-        writeMemory(MEMORY_PATH, { knowledgeProfile: { python: 0.7 } }),
+        writeMemory(MEMORY_PATH, { userPreferences: { communicationStyle: 'verbose', knowledgeLevel: 'expert' } }),
+        writeMemory(MEMORY_PATH, { userPreferences: { communicationStyle: 'concise', knowledgeLevel: 'beginner' } }),
       ]);
 
       expect(r1.success).toBe(true);
       expect(r2.success).toBe(true);
-      // File should be valid JSON
       const written = JSON.parse(mockFs[MEMORY_PATH]) as SharedMemory;
       expect(written.projectId).toBe('proj-1');
     });
 
     it('should return error if memory file is missing', async () => {
       const result = await writeMemory(MEMORY_PATH, {
-        knowledgeProfile: { go: 0.5 },
+        userPreferences: { communicationStyle: 'verbose', knowledgeLevel: 'expert' },
       });
 
       expect(result.success).toBe(false);

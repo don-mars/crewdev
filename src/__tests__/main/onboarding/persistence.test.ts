@@ -4,12 +4,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const mockFs = vi.hoisted(() => ({
   readFile: vi.fn(),
   writeFile: vi.fn(),
+  mkdir: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('node:fs/promises', () => ({
   default: {},
   readFile: mockFs.readFile,
   writeFile: mockFs.writeFile,
+  mkdir: mockFs.mkdir,
 }));
 
 import { saveProgress, loadProgress } from '../../../main/onboarding/persistence';
@@ -40,7 +42,7 @@ describe('Onboarding persistence', () => {
 
   it('should resume at correct step on relaunch', async () => {
     const saved: OnboardingProgress = {
-      currentStep: 'api-key',
+      currentStep: 'knowledge',
       completedSteps: ['welcome', 'github', 'linear'],
       completed: false,
     };
@@ -48,14 +50,14 @@ describe('Onboarding persistence', () => {
 
     const result = await loadProgress('/app/onboarding.json');
 
-    expect(result.currentStep).toBe('api-key');
+    expect(result.currentStep).toBe('knowledge');
     expect(result.completedSteps).toEqual(['welcome', 'github', 'linear']);
   });
 
   it('should not show onboarding after completion', async () => {
     const saved: OnboardingProgress = {
       currentStep: 'project-setup',
-      completedSteps: ['welcome', 'github', 'linear', 'api-key', 'knowledge', 'meet-crew', 'project-setup'],
+      completedSteps: ['welcome', 'github', 'linear', 'knowledge', 'meet-crew', 'project-setup'],
       completed: true,
     };
     mockFs.readFile.mockResolvedValue(JSON.stringify(saved));

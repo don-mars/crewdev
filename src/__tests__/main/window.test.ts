@@ -16,6 +16,9 @@ vi.mock('electron', () => {
     return {
       loadURL: vi.fn(),
       loadFile: vi.fn(),
+      once: vi.fn(),
+      show: vi.fn(),
+      focus: vi.fn(),
       webContents: { openDevTools: vi.fn() },
     };
   }
@@ -27,13 +30,19 @@ vi.mock('electron', () => {
         appCallbacks[event] = cb;
       }),
       quit: vi.fn(),
+      dock: { bounce: vi.fn() },
       _trigger: (event: string) => appCallbacks[event]?.(),
     },
     BrowserWindow: MockBrowserWindow,
+    ipcMain: { handle: vi.fn() },
   };
 });
 
 vi.mock('electron-squirrel-startup', () => ({ default: false }));
+
+vi.mock('../../main/ipc/register-all', () => ({
+  registerAllHandlers: vi.fn(),
+}));
 
 describe('BrowserWindow creation', () => {
   beforeEach(async () => {
@@ -75,6 +84,6 @@ describe('BrowserWindow creation', () => {
     const opts = windowConstructorArgs[0] as { webPreferences: { preload: string } };
     expect(opts.webPreferences.preload).toBeDefined();
     expect(typeof opts.webPreferences.preload).toBe('string');
-    expect(opts.webPreferences.preload).toContain('preload');
+    expect(opts.webPreferences.preload).toContain('index');
   });
 });

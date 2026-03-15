@@ -5,6 +5,7 @@ export interface CrewMemberConfig {
   readonly name: string;
   readonly role: string;
   readonly configContent: string;
+  readonly cwd?: string;
 }
 
 export interface CrewProcess {

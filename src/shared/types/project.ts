@@ -5,22 +5,52 @@ export interface ProjectMetadata {
   readonly createdAt: string;
 }
 
-export interface SharedMemory {
-  readonly projectId: string;
-  readonly decisionLog: DecisionEntry[];
-  readonly knowledgeProfile: Record<string, number>;
+export interface ProjectState {
+  readonly phase: string;
+  readonly techStack: string[];
+  readonly completedFeatures: string[];
+  readonly activeConventions: string[];
 }
 
 export interface DecisionEntry {
-  readonly timestamp: string;
+  readonly date: string;
   readonly decision: string;
-  readonly reason: string;
+  readonly rationale: string;
+}
+
+export interface ErrorHistoryEntry {
+  readonly date: string;
+  readonly error: string;
+  readonly resolution: string;
+}
+
+export interface UserPreferences {
+  readonly communicationStyle: string;
+  readonly knowledgeLevel: string;
+}
+
+export interface SharedMemory {
+  readonly projectId: string;
+  readonly projectState: ProjectState;
+  readonly decisionLog: DecisionEntry[];
+  readonly errorHistory: ErrorHistoryEntry[];
+  readonly userPreferences: UserPreferences;
 }
 
 export function createDefaultMemory(projectId: string): SharedMemory {
   return {
     projectId,
+    projectState: {
+      phase: 'foundation',
+      techStack: [],
+      completedFeatures: [],
+      activeConventions: [],
+    },
     decisionLog: [],
-    knowledgeProfile: {},
+    errorHistory: [],
+    userPreferences: {
+      communicationStyle: 'concise',
+      knowledgeLevel: 'intermediate',
+    },
   };
 }

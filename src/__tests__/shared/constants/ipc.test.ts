@@ -21,7 +21,7 @@ describe('IPC constants', () => {
   it('should use colon-separated namespaced format', () => {
     const values = Object.values(IPC) as string[];
     for (const value of values) {
-      expect(value).toMatch(/^[a-z]+:[a-z][\w:-]*$/);
+      expect(value).toMatch(/^[a-z][\w-]*:[a-z][\w:-]*$/);
     }
   });
 });

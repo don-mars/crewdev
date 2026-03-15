@@ -30,6 +30,7 @@ export class CrewManager {
     return new Promise<CrewProcess>((resolve, reject) => {
       const child = this.spawnFn('claude', ['--print', '--output-format', 'stream-json'], {
         stdio: ['pipe', 'pipe', 'pipe'],
+        cwd: config.cwd,
       });
 
       const crewProcess: CrewProcess = {
@@ -140,6 +141,26 @@ export class CrewManager {
     for (const id of ids) {
       this.kill(id);
     }
+  }
+
+  sendInput(id: string, message: string): void {
+    const managed = this.processes.get(id);
+    if (!managed) {
+      throw createCrewDevError(
+        'PROCESS_NOT_FOUND',
+        `No active process found with id "${id}"`,
+      );
+    }
+
+    if (!managed.child.stdin) {
+      throw createCrewDevError(
+        'STDIN_UNAVAILABLE',
+        `Process "${id}" does not have a writable stdin`,
+      );
+    }
+
+    managed.child.stdin.write(message + '\n');
+    this.resetInactivityTimeout(id);
   }
 
   getProcess(id: string): CrewProcess | undefined {
